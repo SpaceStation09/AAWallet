@@ -1,11 +1,15 @@
 import crypto from "crypto";
 import fs from "fs";
+import { solidityPacked } from "ethers";
+import { formatPubKey } from "./utils";
+
 
 interface Message {
   x: string,
   y: string,
   r: string,
   s: string,
+  packedSig: string,
   hash: string,
   msg: string,
 }
@@ -24,25 +28,25 @@ async function main(){
 
   const r = Buffer.from(sigRaw).subarray(0,32).toString("hex");
   const s = Buffer.from(sigRaw).subarray(32,64).toString("hex");
+  const packedSig = solidityPacked(
+    ["uint256", "uint256"],
+    [`0x${r}`, `0x${s}`]
+  );
 
-  const validMsg = {x,y,r,s, hash: msgHash.toString("hex"), msg};
+  const validMsg: Message = {
+    x,
+    y,
+    r,
+    s,
+    packedSig,
+    hash: msgHash.toString("hex"),
+    msg,
+  };
 
-  const file_path = "./utils/example.json";
+
+  const file_path = "./utils/example-msg.json";
   console.log(`Writing valid msg example to ${file_path}`);
   fs.writeFileSync(file_path, JSON.stringify(validMsg));
-}
-
-const formatPubKey = (publicKey: string): {x: string, y: string} => {
-  const pubKey = Buffer.from(publicKey.substring(54), "hex");
-  assert(pubKey.length === 64, "pubkey must be 64 bytes");
-  const x = `${pubKey.subarray(0, 32).toString("hex")}`;
-  const y = `${pubKey.subarray(32).toString("hex")}`;
-
-  return {x,y}
-}
-
-function assert(cond: boolean, msg: string) {
-  if (!cond) throw new Error(msg);
 }
 
 main();
