@@ -17,7 +17,7 @@ export interface UserOperation {
   signature: string;
 }
 
-export async function packUserOp(op: UserOperation): Promise<string> {
+export function packUserOp(op: UserOperation): string {
   return AbiCoder.defaultAbiCoder().encode(
     [
       "address",
@@ -34,20 +34,20 @@ export async function packUserOp(op: UserOperation): Promise<string> {
     [
       op.sender,
       op.nonce,
-      await sha256(op.initCode),
-      await sha256(op.callData),
+      keccak256(op.initCode),
+      keccak256(op.callData),
       op.callGasLimit,
       op.verificationGasLimit,
       op.preVerificationGas,
       op.maxFeePerGas,
       op.maxPriorityFeePerGas,
-      await sha256(op.paymasterAndData),
+      keccak256(op.paymasterAndData),
     ]
   );
 }
 
-export async function getUserOpWithEnv(userOp: UserOperation, entryPoint: string, chainId: number): Promise<string> {
-  const userOpHash = await sha256((await packUserOp(userOp)).substring(2));
+export function getUserOpWithEnv(userOp: UserOperation, entryPoint: string, chainId: number): string {
+  const userOpHash = keccak256(packUserOp(userOp));
   const enc = AbiCoder.defaultAbiCoder().encode(
     ["bytes32", "address", "uint256"],
     [userOpHash, entryPoint, chainId]
@@ -68,9 +68,3 @@ export const DEFAULT_USER_OPERATION: UserOperation = {
   paymasterAndData: "0x",
   signature: "0x",
 };
-
-const sha256 = async (msg: string): Promise<string> => {
-  const msgBuf = Buffer.from(msg, "hex");
-  const msgHash = Buffer.from(await crypto.subtle.digest("SHA-256", msgBuf));
-  return `0x${msgHash.toString("hex")}`;
-}

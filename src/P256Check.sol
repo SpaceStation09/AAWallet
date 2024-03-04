@@ -34,47 +34,7 @@ contract P256Check {
         return (r,s);
     }
 
-    function getUserOpHash(UserOperation calldata userOp) public pure returns (bytes32){
-        return sha256(abi.encode(getUserOpSHA256(userOp), address(0), 0));
-    }
-
-    function getUserOpSHA256(UserOperation calldata userOp) public pure returns (bytes32){
-        return sha256(pack(userOp));
-    }
-
-    function pack(UserOperation calldata userOp) internal pure returns (bytes memory ret) {
-        address sender = getSender(userOp);
-        uint256 nonce = userOp.nonce;
-        bytes32 hashInitCode = sha256(userOp.initCode);
-        bytes32 hashCallData = sha256(userOp.callData);
-        uint256 callGasLimit = userOp.callGasLimit;
-        uint256 verificationGasLimit = userOp.verificationGasLimit;
-        uint256 preVerificationGas = userOp.preVerificationGas;
-        uint256 maxFeePerGas = userOp.maxFeePerGas;
-        uint256 maxPriorityFeePerGas = userOp.maxPriorityFeePerGas;
-        bytes32 hashPaymasterAndData = sha256(userOp.paymasterAndData);
-
-        return
-            abi.encode(
-                sender,
-                nonce,
-                hashInitCode,
-                hashCallData,
-                callGasLimit,
-                verificationGasLimit,
-                preVerificationGas,
-                maxFeePerGas,
-                maxPriorityFeePerGas,
-                hashPaymasterAndData
-            );
-    }
-
-    function getSender(UserOperation calldata userOp) internal pure returns (address) {
-        address data;
-        //read sender from userOp, which is first userOp member (saves 800 gas...)
-        assembly {
-            data := calldataload(userOp)
-        }
-        return address(uint160(data));
+    function getUserOpHash(UserOperation calldata userOp) internal pure returns (bytes32){
+        return sha256(abi.encode(userOp.hash(), address(0), 0));
     }
 }

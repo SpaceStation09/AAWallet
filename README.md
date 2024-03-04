@@ -29,7 +29,7 @@
 
 `UserOperation` 会被进行一系列预处理后，再送去签名：
   
-- `UserOperation` 中部分类型为`bytes`的字段，在用做签名内容时，会被替代为其的hash值（目前尝试过keccak256，sha256两种算法）。之后，整个UserOperation会被打包为一个字符串(`hash1`)。
-- 被打包的 `UserOperation` (`hash1`) 会再被hash一次(目前尝试过keccak256，sha256两种算法),得到`hash2`。
-- `hash2` 会被和 entrypoint address, chainid 打包在一起，并再一次hash，得到最终的`userOpHash`。
-- 最后，我们使用web crypto的方法，对`userOpHash` 进行签名：`await crypto.subtle.sign(p256, key.privateKey, userOpHash);`
+- `UserOperation` 中部分类型为`bytes`的字段，在用做签名内容时，会被替代为其的hash值（keccak256）。之后，整个UserOperation会被打包为一个字符串(`hash1`)。
+- 被打包的 `UserOperation` (`hash1`) 会再被hash一次(keccak256),得到`hash2`。
+- `hash2` 会被和 entrypoint address, chainid 打包在一起，并再一次hash(sha256)，得到最终的`userOpHash`。
+- 最后，我们使用web crypto的方法，对`UserOperation` 进行签名：`await crypto.subtle.sign(p256, key.privateKey, userOp);`

@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 import "./basic/BaseAccount.sol";
 import "./utils/TokenCallbackHandler.sol";
+import "./interfaces/UserOperation.sol";
 
 /**
  * p256 signature account
@@ -21,6 +22,7 @@ import "./utils/TokenCallbackHandler.sol";
 contract P256Account is BaseAccount, Initializable, TokenCallbackHandler  {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
+    using UserOperationLib for UserOperation;
 
     address public owner;
     uint256[2] public p256Owner;
@@ -99,7 +101,7 @@ contract P256Account is BaseAccount, Initializable, TokenCallbackHandler  {
     }
 
     function _initialize(address _owner) internal virtual {
-        owner = _owner;
+        owner = _owner; 
         emit P256AccountInitialized(_entryPoint, _owner);
     }
 
@@ -119,7 +121,8 @@ contract P256Account is BaseAccount, Initializable, TokenCallbackHandler  {
             if (owner != hash.recover(userOp.signature)) return SIG_VALIDATION_FAILED;
         }else {
             (uint256 r, uint256 s) = abi.decode(userOp.signature, (uint256, uint256));
-            if(!P256.verifySignature(userOpHash, r, s, p256Owner[0], p256Owner[1])) return SIG_VALIDATION_FAILED;
+            bytes32 userOpSHA256 = _getUserOpSHA256(userOp);
+            if(!P256.verifySignatureAllowMalleability(userOpSHA256, r, s, p256Owner[0], p256Owner[1])) return SIG_VALIDATION_FAILED;
         }
     }
 
@@ -134,5 +137,9 @@ contract P256Account is BaseAccount, Initializable, TokenCallbackHandler  {
                 revert(add(result, 32), mload(result))
             }
         }
+    }
+
+    function _getUserOpSHA256(UserOperation calldata userOp) internal pure returns(bytes32){
+        return sha256(abi.encode(userOp.hash(), address(0), 0));
     }
 }
